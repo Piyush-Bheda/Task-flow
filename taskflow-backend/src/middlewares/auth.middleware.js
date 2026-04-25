@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 exports.authMiddleware = (req, res, next) => {
     try {
-        const token = req.cookies.token;
+        const token = req.headers.authorization;
 
         if (!token) {
             return res.status(401).json({
@@ -31,7 +31,7 @@ exports.authMiddleware = (req, res, next) => {
     } catch (error) {
         return res.status(401).json({
             success: false,
-            message: "Invalid token",
+            message: error.message,
         });
     }
 };

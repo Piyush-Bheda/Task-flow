@@ -12,7 +12,7 @@ const {
 const { authMiddleware } = require("../middlewares/auth.middleware");
 
 router.post("/", authMiddleware, checkRole(["owner", "admin", "member"]), createIssue);
-router.get("/", authMiddleware, checkRole(["owner", "admin", "member"]), getIssues);
+router.get("/", authMiddleware, getIssues);
 router.patch("/:id", authMiddleware, checkRole(["owner", "admin", "member"]), updateIssue);
 router.delete("/:id", authMiddleware, checkRole(["owner", "admin"]), deleteIssue);
 
