@@ -68,6 +68,11 @@ export const login: TypedRequestHandler<never, unknown, LoginBody> = async (
     return res.json({
       success: true,
       token,
+      user: {
+        id: String(existingUser.id),
+        name: existingUser.name,
+        email: existingUser.email,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -92,6 +97,11 @@ export const register: TypedRequestHandler<never, unknown, RegisterBody> = async
       });
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error("FATAL ERROR: JWT_SECRET is not defined in .env");
+      return res.status(500).json({ success: false, message: "Server configuration error" });
+    }
+
     const existingUser = await pool.query<UserRecord>("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
@@ -109,9 +119,24 @@ export const register: TypedRequestHandler<never, unknown, RegisterBody> = async
       [name, email, hashedPassword],
     );
 
+    const created = newUser.rows[0];
+
+    if (!created) {
+      return res.status(500).json({ success: false, message: "Server error" });
+    }
+
+    const token = jwt.sign({ userId: created.id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
     return res.status(201).json({
       success: true,
-      data: newUser.rows[0],
+      token,
+      user: {
+        id: String(created.id),
+        name: created.name,
+        email: created.email,
+      },
     });
   } catch (error) {
     console.error(error);
