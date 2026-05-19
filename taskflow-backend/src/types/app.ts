@@ -9,7 +9,7 @@ export enum WorkspaceRole {
 }
 
 export interface AuthTokenPayload {
-  userId: number;
+  userId: number | string;
 }
 
 export interface AuthenticatedRequest extends Request {

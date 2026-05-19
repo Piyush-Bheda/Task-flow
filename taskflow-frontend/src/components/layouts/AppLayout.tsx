@@ -45,9 +45,9 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block">
+    <div className="relative min-h-screen bg-background">
+      {/* Desktop Sidebar - fixed position */}
+      <div className="hidden md:block fixed top-0 left-0 h-screen z-40">
         <Sidebar isCollapsed={isCollapsed} onToggleCollapse={() => {
           const next = !isCollapsed;
           setIsCollapsed(next);
@@ -59,12 +59,12 @@ export default function AppLayout() {
       <MobileSidebar isOpen={isMobileOpen} onClose={handleMobileClose} />
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className={`transition-all duration-300 ${isCollapsed ? "md:pl-16" : "md:pl-[240px]"}`}>
         <Navbar
           onMenuClick={handleMenuClick}
           collapsedSidebar={isCollapsed}
         />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="p-6">
           <Outlet />
         </main>
       </div>

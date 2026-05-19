@@ -1,5 +1,5 @@
 import express from "express";
-import { createIssue, deleteIssue, getIssues, updateIssue } from "../controllers/issue.controller.js";
+import { createIssue, deleteIssue, getIssues, getAssignedIssues, updateIssue } from "../controllers/issue.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { checkRole, WorkspaceRole } from "../middlewares/rbac.middleware.js";
 
@@ -12,6 +12,7 @@ router.post(
   createIssue,
 );
 router.get("/", authMiddleware, getIssues);
+router.get("/assigned", authMiddleware, getAssignedIssues);
 router.patch(
   "/:id",
   authMiddleware,

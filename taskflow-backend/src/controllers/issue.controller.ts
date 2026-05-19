@@ -3,7 +3,7 @@ import type { ParamsDictionary } from "express-serve-static-core";
 import pool from "../config/db.js";
 import { delCache } from "../utils/cache.js";
 import { logActivity } from "../utils/activityLogger.js";
-import { requireUser, toNumber, type IssueRecord, type TypedRequestHandler } from "../types/app.js";
+import { requireUser, toNumber, type IssueRecord, type TypedRequestHandler, type AuthTokenPayload } from "../types/app.js";
 
 interface CreateIssueBody {
   workspaceId?: number | string;
@@ -58,7 +58,7 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
 
     await logActivity({
       workspaceId: toNumber(workspaceId),
-      userId: requireUser(req).userId,
+      userId: toNumber(requireUser(req).userId),
       action: "ISSUE_CREATED",
       entityType: "issue",
       entityId: createdIssue.id,
@@ -137,7 +137,7 @@ export const updateIssue: TypedRequestHandler<IssueParams, unknown, UpdateIssueB
     if (req.body.workspaceId !== undefined) {
       await logActivity({
         workspaceId: toNumber(req.body.workspaceId),
-        userId: requireUser(req).userId,
+        userId: toNumber(requireUser(req).userId),
         action: "ISSUE_UPDATED",
         entityType: "issue",
         entityId: Number(id),
@@ -175,7 +175,7 @@ export const deleteIssue: TypedRequestHandler<IssueParams, unknown, UpdateIssueB
     if (deletedIssue && req.body.workspaceId !== undefined) {
       await logActivity({
         workspaceId: toNumber(req.body.workspaceId),
-        userId: requireUser(req).userId,
+        userId: toNumber(requireUser(req).userId),
         action: "ISSUE_DELETED",
         entityType: "issue",
         entityId: Number(id),
@@ -189,5 +189,50 @@ export const deleteIssue: TypedRequestHandler<IssueParams, unknown, UpdateIssueB
     });
   } catch {
     res.status(500).json({ success: false });
+  }
+};
+
+interface AssignedIssue {
+  id: string;
+  title: string;
+  status: "open" | "in_progress" | "done" | "backlog";
+  priority: "low" | "medium" | "high" | "urgent";
+  projectName: string;
+  dueDate?: string;
+}
+
+export const getAssignedIssues: TypedRequestHandler = async (req, res) => {
+  try {
+    const user = requireUser(req) as AuthTokenPayload;
+    const userId = user.userId;
+
+    let result;
+    try {
+      result = await pool.query<IssueRecord & { project_name: string }>(
+        `SELECT i.*, p.name as project_name
+         FROM issues i
+         JOIN projects p ON i.project_id = p.id
+         WHERE i.assignee_id = $1
+         ORDER BY i.created_at DESC
+         LIMIT 20`,
+        [userId],
+      );
+    } catch (dbError) {
+      console.log("getAssignedIssues - No assigned issues or error:", dbError);
+      return res.json({ success: true, data: [] });
+    }
+
+    const issues: AssignedIssue[] = result.rows.map((row) => ({
+      id: String(row.id),
+      title: row.title,
+      status: (row.status ?? "open") as AssignedIssue["status"],
+      priority: (row.priority ?? "medium") as AssignedIssue["priority"],
+      projectName: row.project_name,
+    }));
+
+    res.json({ success: true, data: issues });
+  } catch (error) {
+    console.error("Error in getAssignedIssues:", error);
+    res.status(500).json({ success: false, message: error instanceof Error ? error.message : String(error) });
   }
 };

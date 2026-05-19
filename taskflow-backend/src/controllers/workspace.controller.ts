@@ -53,7 +53,13 @@ export const createWorkspace: TypedRequestHandler<never, unknown, CreateWorkspac
 
     res.status(201).json({
       success: true,
-      data: createdWorkspace,
+      data: {
+        id: String(createdWorkspace.id),
+        name: createdWorkspace.name,
+        owner_id: String(createdWorkspace.owner_id),
+        created_at: createdWorkspace.created_at,
+        updated_at: createdWorkspace.updated_at,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -74,16 +80,17 @@ export const getUserWorkspaces: TypedRequestHandler = async (req: Request, res: 
       [userId],
     );
 
-    if (!result.rows.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No workspaces found",
-      });
-    }
+    const workspaces = result.rows.map(w => ({
+      id: String(w.id),
+      name: w.name,
+      owner_id: String(w.owner_id),
+      created_at: w.created_at,
+      updated_at: w.updated_at,
+    }));
 
     res.json({
       success: true,
-      data: result.rows,
+      data: workspaces,
     });
   } catch {
     res.status(500).json({ success: false });

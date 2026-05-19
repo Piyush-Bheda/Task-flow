@@ -42,6 +42,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('token');
+    console.log("Axios request - Token:", token?.substring(0, 50));
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -54,9 +55,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {
+    console.error("API Error:", error.response?.status, error.response?.data);
     if (error.response?.status === 401) {
+      console.log("401 Unauthorized - removing token and redirecting");
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

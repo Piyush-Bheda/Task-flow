@@ -1,16 +1,16 @@
 import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthForm, type FormField, type FormError } from '../components/forms/AuthForm';
-import api from '../api/axios';
-import type { AuthResponse, LoginCredentials } from '../types/auth';
-import { useAuth } from '../hooks/useAuth';
+import { AuthForm, type FormField, type FormError } from '@/components/forms/AuthForm';
+import api from '@/api/axios';
+import type { AuthResponse, LoginCredentials } from '@/types/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { AxiosError } from 'axios';
 
 const loginFields: FormField[] = [
   {
     name: 'email',
     label: 'Email address',
-    type: 'email',
+    type: 'email',  
     placeholder: 'you@company.com',
     required: true,
     autoComplete: 'email',
@@ -71,6 +71,7 @@ export default function Login() {
         };
 
         const response = await api.post<AuthResponse>('/api/auth/login', credentials);
+        console.log('Login response:', response.data);
         const { token, user } = response.data;
 
         login(token, user);

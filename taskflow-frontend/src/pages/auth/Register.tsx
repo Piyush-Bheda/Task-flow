@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthForm, type FormField, type FormError } from '../components/forms/AuthForm';
-import api from '../api/axios';
-import type { AuthResponse, RegisterCredentials } from '../types/auth';
-import { useAuth } from '../hooks/useAuth';
+import { AuthForm, type FormField, type FormError } from '@/components/forms/AuthForm';
+import api from '@/api/axios';
+import type { AuthResponse, RegisterCredentials } from '@/types/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { AxiosError } from 'axios';
 
 const registerFields: FormField[] = [

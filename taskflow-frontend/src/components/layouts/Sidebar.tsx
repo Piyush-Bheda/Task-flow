@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, Settings, Users, PanelLeft } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Settings, Users, PanelLeft, AlertCircle } from "lucide-react";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
 interface SidebarProps {
@@ -11,8 +11,9 @@ interface SidebarProps {
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/issues", label: "Issues", icon: AlertCircle },        // ← NEW
   { to: "/members", label: "Members", icon: Users },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {

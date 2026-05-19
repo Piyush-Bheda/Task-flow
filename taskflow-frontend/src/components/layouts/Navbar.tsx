@@ -22,14 +22,13 @@ export default function Navbar({ onMenuClick, collapsedSidebar }: NavbarProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
-  const sidebarOffset = collapsedSidebar ? "md:ml-16" : "md:ml-[240px]";
-
   return (
     <header
-      className={`sticky top-0 z-40 h-14 border-b border-border bg-background flex items-center justify-between px-4 ${sidebarOffset} transition-all duration-300`}
+      className="sticky top-0 z-40 h-14 border-b border-border bg-background flex items-center justify-between px-4"
     >
       {/* Left */}
       <div className="flex items-center gap-3">

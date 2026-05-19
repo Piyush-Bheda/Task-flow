@@ -8,7 +8,9 @@ import type {
   ProjectIssueCountRow,
   StatusCountRow,
   TypedRequestHandler,
+  AuthTokenPayload,
 } from "../types/app.js";
+import { requireUser } from "../types/app.js";
 
 interface DashboardQuery {
   workspaceId?: string;
@@ -19,6 +21,13 @@ interface DashboardSummary {
   totalIssues: number;
   byStatus: StatusCountRow[];
   byPriority: PriorityCountRow[];
+}
+
+interface DashboardStats {
+  totalProjects: number;
+  totalIssues: number;
+  completedIssues: number;
+  activeUsers: number;
 }
 
 interface DashboardCharts {
@@ -199,6 +208,81 @@ export const getIssuesByProject: TypedRequestHandler<never, unknown, never, Dash
 
     return res.json({ success: true, data, source: "db" });
   } catch (error) {
+    res.status(500).json({ success: false, message: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+export const getStats: TypedRequestHandler = async (req, res) => {
+  try {
+    const user = requireUser(req) as AuthTokenPayload;
+    const userId = user.userId;
+    console.log("getStats - userId:", userId, typeof userId);
+
+    let workspaceResult;
+    try {
+      workspaceResult = await pool.query<{ workspace_id: string }>(
+        "SELECT workspace_id FROM workspace_members WHERE user_id = $1 LIMIT 1",
+        [userId],
+      );
+    } catch (dbError: any) {
+      console.log("getStats - DB error:", dbError.message);
+      // If query fails due to type mismatch, user has no workspace
+      return res.json({
+        success: true,
+        data: {
+          totalProjects: 0,
+          totalIssues: 0,
+          completedIssues: 0,
+          activeUsers: 0,
+        },
+      });
+    }
+
+    console.log("getStats - workspaceResult:", workspaceResult.rows);
+
+    if (workspaceResult.rows.length === 0) {
+      console.log("getStats - No workspace, returning zeros");
+      return res.json({
+        success: true,
+        data: {
+          totalProjects: 0,
+          totalIssues: 0,
+          completedIssues: 0,
+          activeUsers: 0,
+        },
+      });
+    }
+
+    const workspaceId = workspaceResult.rows[0]!.workspace_id;
+    console.log("getStats - workspaceId:", workspaceId);
+
+    const [projectsResult, issuesResult, completedResult, usersResult] = await Promise.all([
+      pool.query<CountRow>("SELECT COUNT(*) FROM projects WHERE workspace_id = $1", [workspaceId]),
+      pool.query<CountRow>(
+        "SELECT COUNT(*) FROM issues i JOIN projects p ON i.project_id = p.id WHERE p.workspace_id = $1",
+        [workspaceId],
+      ),
+      pool.query<CountRow>(
+        "SELECT COUNT(*) FROM issues i JOIN projects p ON i.project_id = p.id WHERE p.workspace_id = $1 AND i.status = 'done'",
+        [workspaceId],
+      ),
+      pool.query<CountRow>(
+        "SELECT COUNT(DISTINCT user_id) FROM workspace_members WHERE workspace_id = $1",
+        [workspaceId],
+      ),
+    ]);
+
+    const data: DashboardStats = {
+      totalProjects: Number(projectsResult.rows[0]?.count ?? 0),
+      totalIssues: Number(issuesResult.rows[0]?.count ?? 0),
+      completedIssues: Number(completedResult.rows[0]?.count ?? 0),
+      activeUsers: Number(usersResult.rows[0]?.count ?? 0),
+    };
+
+    console.log("getStats - returning:", data);
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error("Error in getStats:", error);
     res.status(500).json({ success: false, message: error instanceof Error ? error.message : String(error) });
   }
 };

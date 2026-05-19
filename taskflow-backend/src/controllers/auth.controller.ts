@@ -146,3 +146,67 @@ export const register: TypedRequestHandler<never, unknown, RegisterBody> = async
     });
   }
 };
+
+const refresh: TypedRequestHandler<never, unknown, { refreshToken: string }> = async (
+  req: Request<never, unknown, { refreshToken: string }>,
+  res: Response,
+) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      message: "Refresh token required",
+    });
+  }
+
+  try {
+    if (!process.env.JWT_SECRET) {
+      console.error("FATAL ERROR: JWT_SECRET is not defined in .env");
+      return res.status(500).json({ success: false, message: "Server configuration error" });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET) as {
+      userId: string;
+    };
+    const user = await pool.query<UserRecord>("SELECT * FROM users WHERE id = $1", [
+      decoded.userId,
+    ]);
+
+    if (user.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const existingUser = user.rows[0];
+
+    if (!existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const token = jwt.sign({ userId: existingUser.id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: String(existingUser.id),
+        name: existingUser.name,
+        email: existingUser.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
