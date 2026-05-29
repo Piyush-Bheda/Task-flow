@@ -24,3 +24,4 @@ View creation and update events for projects, issues, and workspaces.
 User Management
 Authenticate via secure Login and Registration flows.
 
+database tables in backend\db\schema.sql
