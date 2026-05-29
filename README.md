@@ -1,4 +1,4 @@
-Task Flow - Enhanced Workspace Management Platform
+Task Flow - multi workspace project management
 Overview
 Task Flow is a comprehensive web application designed for seamless team collaboration and project management. It enables users to create and manage workspaces, organize projects, track issues, and monitor team activities—all within a unified interface.
 
