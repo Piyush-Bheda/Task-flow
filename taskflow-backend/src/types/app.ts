@@ -8,6 +8,12 @@ export enum WorkspaceRole {
   Member = "member",
 }
 
+export enum ProjectRole {
+  Owner = "owner",
+  Admin = "admin",
+  Member = "member",
+}
+
 export interface AuthTokenPayload {
   userId: number | string;
 }
@@ -42,9 +48,17 @@ export interface WorkspaceRecord {
 }
 
 export interface WorkspaceMemberRecord {
-  workspace_id: number;
-  user_id: number;
+  workspace_id: string;
+  user_id: string;
   role: WorkspaceRole;
+}
+
+export interface ProjectMemberRecord {
+  project_id: string;
+  user_id: string;
+  role: ProjectRole;
+  user_name?: string;
+  user_email?: string;
 }
 
 export interface ProjectRecord {

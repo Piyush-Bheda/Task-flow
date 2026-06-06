@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { FolderKanban, ArrowUpRight } from 'lucide-react';
-import type { Project } from '@/types/project';
+import type { Project } from '@/types/projectDetails';
 import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {

@@ -7,7 +7,8 @@
     "build": "tsc -p ../tsconfig.json",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --config ./jest.config.cjs",
     "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "migrate": "tsx src/utils/migrate-runner.ts"
   },
   "keywords": [],
   "author": "",

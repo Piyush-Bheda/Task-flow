@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, FolderKanban, Settings, Users, PanelLeft, AlertCircle } from "lucide-react";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -11,13 +12,18 @@ interface SidebarProps {
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/issues", label: "Issues", icon: AlertCircle },        // ← NEW
+  { to: "/issues", label: "Issues", icon: AlertCircle },
   { to: "/members", label: "Members", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const sidebarWidth = isCollapsed ? "w-16" : "w-[240px]";
+  const { user } = useAuth();
+
+  const userInitial = user?.name
+    ? user.name.trim().charAt(0).toUpperCase()
+    : (user?.email ? user.email.trim().charAt(0).toUpperCase() : "U");
 
   return (
     <aside
@@ -75,12 +81,12 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps)
         {/* [E] Sidebar Footer */}
         <div className={`mt-2 px-3 pt-3 border-t border-border ${isCollapsed ? "px-2" : "px-3"}`}>
           <div className="flex items-center gap-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-              <span className="text-xs font-medium text-muted-foreground">U</span>
+            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0" title={user?.name || user?.email || undefined}>
+              <span className="text-xs font-medium text-muted-foreground">{userInitial}</span>
             </div>
             {!isCollapsed && (
-              <span className="text-sm text-muted-foreground truncate">
-                user@example.com
+              <span className="text-sm text-muted-foreground truncate" title={user?.email || undefined}>
+                {user?.email || "user@example.com"}
               </span>
             )}
           </div>

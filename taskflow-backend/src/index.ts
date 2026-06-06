@@ -10,10 +10,12 @@ import commentRoutes from "./routes/comment.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import issueRoutes from "./routes/issue.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import projectMemberRoutes from "./routes/projectMember.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
 import pool from "./config/db.js";
 import { WorkspaceRole } from "./types/app.js";
 import { requireUser } from "./types/app.js";
+import { runMigrations } from "./utils/migrate.js";
 
 const app = express();
 
@@ -24,6 +26,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/projects", projectMemberRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/activity", activityRoutes);
@@ -110,5 +113,9 @@ const entryFile = process.argv[1] ?? "";
 if (entryFile.endsWith("index.js") || entryFile.endsWith("index.ts")) {
   app.listen(port, () => console.log(`Server running on ${port}`));
 }
+
+runMigrations().catch((err) => {
+  console.error("Migration runner failed:", err);
+});
 
 export default app;
