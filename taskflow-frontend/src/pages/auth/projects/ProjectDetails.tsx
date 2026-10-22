@@ -76,12 +76,12 @@ export default function ProjectDetails() {
     retry: false,
   });
 
-  // Fetch user's role in project
-  const { data: userRole, isLoading: roleLoading, error: roleError } = useQuery({
+  // Fetch user's role in project AND workspace
+  const { data: roleData, isLoading: roleLoading, error: roleError } = useQuery({
     queryKey: ['projectRole', id],
     queryFn: async () => {
-      const { data } = await api.get<{ success: boolean; data: { role: ProjectRole | null } }>(`/api/projects/${id}/members/role`);
-      return data.data?.role ?? null;
+      const { data } = await api.get<{ success: boolean; data: { role: ProjectRole | null; workspaceRole: string | null } }>(`/api/projects/${id}/members/role`);
+      return data.data;
     },
     enabled: !!id,
     retry: false,
@@ -228,13 +228,15 @@ export default function ProjectDetails() {
     );
   }
 
-  const canManage = userRole === 'owner' || userRole === 'admin';
-  const canDelete = userRole === 'owner';
+  // canManage: project owner/admin OR workspace owner/admin
+  const canManage = roleData?.role === 'owner' || roleData?.role === 'admin' || roleData?.workspaceRole === 'owner' || roleData?.workspaceRole === 'admin';
+  // canDelete: project owner OR workspace owner (only these can delete)
+  const canDelete = roleData?.role === 'owner' || roleData?.workspaceRole === 'owner';
 
   return (
     <div className="space-y-8">
       {/* VIEW-ONLY BANNER */}
-      {!roleLoading && userRole === null && (
+      {!roleLoading && roleData?.role === null && roleData?.workspaceRole !== 'owner' && roleData?.workspaceRole !== 'admin' && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-center gap-3">
           <Shield className="h-5 w-5 text-amber-600 shrink-0" />
           <div>
@@ -269,6 +271,7 @@ export default function ProjectDetails() {
             <Button
               variant="outline"
               size="sm"
+              className="bg-white"
               onClick={() => {
                 setEditName(project.name);
                 setEditDescription(project.description ?? '');
@@ -283,7 +286,7 @@ export default function ProjectDetails() {
             <Button
               variant="outline"
               size="sm"
-              className="text-red-600 hover:text-red-700"
+              className="bg-white text-red-600 hover:text-red-700 hover:bg-red-50"
               onClick={() => setShowDeleteConfirm(true)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
@@ -481,7 +484,7 @@ export default function ProjectDetails() {
       {/* ADD MEMBER MODAL */}
       {showAddMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background rounded-xl border shadow-lg w-full max-w-md p-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border shadow-lg w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Add Team Member</h3>
               <Button variant="ghost" size="icon" onClick={() => setShowAddMember(false)}>
@@ -529,7 +532,7 @@ export default function ProjectDetails() {
       {/* EDIT PROJECT MODAL */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background rounded-xl border shadow-lg w-full max-w-md p-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border shadow-lg w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Edit Project</h3>
               <Button variant="ghost" size="icon" onClick={() => setShowEditModal(false)}>
@@ -588,7 +591,7 @@ export default function ProjectDetails() {
       {/* DELETE CONFIRMATION */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background rounded-xl border shadow-lg w-full max-w-sm p-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border shadow-lg w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center">
                 <Trash2 className="h-5 w-5 text-red-600" />

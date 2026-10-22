@@ -5,7 +5,6 @@ import { Input } from "../ui/input";
 
 interface NavbarProps {
   onMenuClick: () => void;
-  collapsedSidebar: boolean;
 }
 
 const pageTitles: Record<string, string> = {
@@ -15,7 +14,7 @@ const pageTitles: Record<string, string> = {
   "/members": "Members",
 };
 
-export default function Navbar({ onMenuClick, collapsedSidebar }: NavbarProps) {
+export default function Navbar({ onMenuClick }: NavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const pageTitle = pageTitles[location.pathname] || "Dashboard";

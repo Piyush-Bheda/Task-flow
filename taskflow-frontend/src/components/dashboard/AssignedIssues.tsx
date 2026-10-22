@@ -1,6 +1,6 @@
 import type { AssignedIssue } from '@/types/dashboard';
 import { EmptyState } from './EmptyState';
-import { AlertCircle, Clock, CheckCircle2, Circle, ArrowUpCircle } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AssignedIssuesProps {

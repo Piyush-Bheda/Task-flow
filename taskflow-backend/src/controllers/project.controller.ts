@@ -303,8 +303,7 @@ export const deleteProject: TypedRequestHandler<UpdateProjectParams> =
         return res.status(403).json({ success: false, message: "Only project owner can delete this project" });
       }
 
-      await pool.query("DELETE FROM project_members WHERE project_id = $1", [id]);
-      await pool.query("DELETE FROM issues WHERE project_id = $1", [id]);
+      // CASCADE handles project_members, issues, activity_logs deletion
       const result = await pool.query<ProjectRecord>("DELETE FROM projects WHERE id = $1 RETURNING *", [id]);
 
       await delCache(`dashboard:${workspaceId}`);

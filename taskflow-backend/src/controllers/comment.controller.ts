@@ -31,7 +31,7 @@ export const addComment: TypedRequestHandler<never, unknown, AddCommentBody> = a
     if (workspaceId !== undefined && issueId !== undefined) {
       await logActivity({
         workspaceId: toNumber(workspaceId),
-        userId,
+        userId: toNumber(userId),
         action: "COMMENT_ADDED",
         entityType: "issue",
         entityId: toNumber(issueId),

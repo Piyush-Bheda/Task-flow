@@ -95,8 +95,6 @@ export const getProjectMemberRole: TypedRequestHandler<ProjectParams> = async (r
 
     const member = result.rows[0];
     if (!member) {
-      // Not a direct project member; check if they're a workspace owner/admin
-      // (they may have implicit access via workspace role)
       const projectRow = await pool.query<{ workspace_id: string }>(
         "SELECT workspace_id FROM projects WHERE id = $1",
         [projectId],
@@ -116,12 +114,11 @@ export const getProjectMemberRole: TypedRequestHandler<ProjectParams> = async (r
         return res.status(403).json({ success: false, message: "Access denied" });
       }
 
-      // Workspace member but not a project member; return null role
-      // Frontend will use this to hide action buttons but still show data
-      return res.json({ success: true, data: { role: null } });
+      const wsRole = workspaceMember.rows[0]!.role;
+      return res.json({ success: true, data: { role: null, workspaceRole: wsRole } });
     }
 
-    res.json({ success: true, data: { role: member.role } });
+    res.json({ success: true, data: { role: member.role, workspaceRole: null } });
   } catch (error) {
     console.error("getProjectMemberRole error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch user role" });

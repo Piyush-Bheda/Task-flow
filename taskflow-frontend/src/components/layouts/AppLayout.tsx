@@ -62,7 +62,6 @@ export default function AppLayout() {
       <div className={`transition-all duration-300 ${isCollapsed ? "md:pl-16" : "md:pl-[240px]"}`}>
         <Navbar
           onMenuClick={handleMenuClick}
-          collapsedSidebar={isCollapsed}
         />
         <main className="p-6">
           <Outlet />

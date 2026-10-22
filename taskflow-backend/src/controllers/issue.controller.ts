@@ -11,12 +11,16 @@ interface CreateIssueBody {
   title?: string;
   description?: string | null;
   priority?: string | null;
+  assigneeId?: string | null;
 }
 
 interface UpdateIssueBody {
   workspaceId?: number | string;
   status?: string | null;
-  assignee_id?: number | string | null;
+  assigneeId?: string | null;
+  title?: string;
+  description?: string;
+  priority?: string;
 }
 
 interface IssueParams extends ParamsDictionary {
@@ -27,8 +31,54 @@ interface GetIssuesQuery {
   projectId?: string;
   status?: string;
   priority?: string;
+  assigneeId?: string;
+  search?: string;
   page?: string;
   limit?: string;
+}
+
+interface IssueResponse {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  assignee: { id: string; name: string; initials: string } | null;
+  projectId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function normalizeStatus(status: string | null | undefined): string {
+  const valid = ["todo", "in-progress", "done"];
+  if (status && valid.includes(status)) return status;
+  return "todo";
+}
+
+function mapIssue(
+  row: IssueRecord & { assignee_name?: string; assignee_initials?: string },
+): IssueResponse {
+  return {
+    id: String(row.id),
+    title: row.title,
+    description: row.description ?? "",
+    status: normalizeStatus(row.status),
+    priority: row.priority ?? "medium",
+    assignee: row.assignee_id
+      ? {
+          id: String(row.assignee_id),
+          name: row.assignee_name ?? "Unknown",
+          initials: row.assignee_initials ?? "?",
+        }
+      : null,
+    projectId: String(row.project_id),
+    createdAt: row.created_at
+      ? new Date(row.created_at).toISOString()
+      : new Date().toISOString(),
+    updatedAt: row.updated_at
+      ? new Date(row.updated_at).toISOString()
+      : new Date().toISOString(),
+  };
 }
 
 type IssueQueryValue = string | number | null | undefined;
@@ -38,21 +88,25 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
   res: Response,
 ) => {
   try {
-    const { workspaceId, projectId, title, description, priority } = req.body;
+    const { workspaceId, projectId, title, description, priority, assigneeId } = req.body;
 
     const result = await pool.query<IssueRecord>(
-      `INSERT INTO issues (project_id, title, description, priority)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO issues (project_id, title, description, priority, assignee_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [projectId, title, description, priority],
+      [projectId, title, description, priority, assigneeId || null],
     );
 
     const createdIssue = result.rows[0];
 
-    if (!createdIssue || workspaceId === undefined) {
+    if (!createdIssue) {
+      return res.status(500).json({ success: false, message: "Failed to create issue" });
+    }
+
+    if (workspaceId === undefined) {
       return res.status(201).json({
         success: true,
-        data: createdIssue,
+        data: mapIssue(createdIssue),
       });
     }
 
@@ -69,10 +123,47 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
 
     res.status(201).json({
       success: true,
-      data: createdIssue,
+      data: mapIssue(createdIssue),
     });
   } catch {
     res.status(500).json({ success: false });
+  }
+};
+
+export const getIssue: TypedRequestHandler<IssueParams> = async (
+  req: Request<IssueParams>,
+  res: Response,
+) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query<
+      IssueRecord & { assignee_name: string | null; assignee_email: string | null }
+    >(
+      `SELECT i.*, u.name as assignee_name, u.email as assignee_email
+       FROM issues i
+       LEFT JOIN users u ON i.assignee_id = u.id
+       WHERE i.id = $1`,
+      [id],
+    );
+
+    const row = result.rows[0];
+    if (!row) {
+      return res.status(404).json({ success: false, message: "Issue not found" });
+    }
+
+    res.json({
+      success: true,
+      data: mapIssue({
+        ...row,
+        assignee_name: row.assignee_name ?? "",
+        assignee_initials: row.assignee_email
+          ? row.assignee_email.charAt(0).toUpperCase()
+          : "",
+      }),
+    });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to fetch issue" });
   }
 };
 
@@ -81,33 +172,85 @@ export const getIssues: TypedRequestHandler<never, unknown, never, GetIssuesQuer
   res: Response,
 ) => {
   try {
-    const { projectId, status, priority } = req.query;
+    const { projectId, status, priority, assigneeId, search } = req.query;
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 10);
 
     const offset = (page - 1) * limit;
-    let query = "SELECT * FROM issues WHERE project_id = $1";
-    const values: IssueQueryValue[] = [projectId];
-    let index = 2;
+
+    const conditions: string[] = [];
+    const values: IssueQueryValue[] = [];
+    let index = 1;
+
+    if (projectId) {
+      conditions.push(`i.project_id = $${index++}`);
+      values.push(projectId);
+    }
 
     if (status) {
-      query += ` AND status = $${index++}`;
+      conditions.push(`i.status = $${index++}`);
       values.push(status);
     }
 
     if (priority) {
-      query += ` AND priority = $${index++}`;
+      conditions.push(`i.priority = $${index++}`);
       values.push(priority);
     }
 
-    query += ` LIMIT $${index++} OFFSET $${index}`;
+    if (assigneeId) {
+      conditions.push(`i.assignee_id = $${index++}`);
+      values.push(assigneeId);
+    }
+
+    if (search) {
+      conditions.push(`(i.title ILIKE $${index++} OR i.description ILIKE $${index})`);
+      const pattern = `%${search}%`;
+      values.push(pattern, pattern);
+      index += 2;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // Get total count for pagination
+    const countResult = await pool.query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM issues i ${whereClause}`,
+      values.slice(0, index - 1),
+    );
+    const totalCount = Number(countResult.rows[0]?.count ?? 0);
+
+    // Fetch page data with assignee join
+    const dataQuery = `
+      SELECT i.*, u.name as assignee_name, u.email as assignee_email
+      FROM issues i
+      LEFT JOIN users u ON i.assignee_id = u.id
+      ${whereClause}
+      ORDER BY i.created_at DESC
+      LIMIT $${index++} OFFSET $${index}
+    `;
     values.push(limit, offset);
 
-    const result = await pool.query<IssueRecord>(query, values);
+    const result = await pool.query<
+      IssueRecord & { assignee_name: string | null; assignee_email: string | null }
+    >(dataQuery, values);
+
+    const data = result.rows.map((row) =>
+      mapIssue({
+        ...row,
+        assignee_name: row.assignee_name ?? "",
+        assignee_initials: row.assignee_email
+          ? row.assignee_email.charAt(0).toUpperCase()
+          : "",
+      }),
+    );
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     res.json({
       success: true,
-      data: result.rows,
+      data,
+      totalPages,
+      totalCount,
+      currentPage: page,
     });
   } catch {
     res.status(500).json({ success: false });
@@ -120,19 +263,51 @@ export const updateIssue: TypedRequestHandler<IssueParams, unknown, UpdateIssueB
 ) => {
   try {
     const { id } = req.params;
-    const { status, assignee_id } = req.body;
+    const { status, assigneeId, title, description, priority } = req.body;
 
     await delCache(`dashboard:${req.body.workspaceId}`);
 
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+    let idx = 1;
+
+    if (status !== undefined) {
+      fields.push(`status = $${idx++}`);
+      values.push(normalizeStatus(status));
+    }
+    if (assigneeId !== undefined) {
+      fields.push(`assignee_id = $${idx++}`);
+      values.push(assigneeId || null);
+    }
+    if (title !== undefined) {
+      fields.push(`title = $${idx++}`);
+      values.push(title);
+    }
+    if (description !== undefined) {
+      fields.push(`description = $${idx++}`);
+      values.push(description);
+    }
+    if (priority !== undefined) {
+      fields.push(`priority = $${idx++}`);
+      values.push(priority);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ success: false, message: "No fields to update" });
+    }
+
+    fields.push(`updated_at = CURRENT_TIMESTAMP`);
+
     const result = await pool.query<IssueRecord>(
-      `UPDATE issues
-       SET status = $1,
-           assignee_id = $2,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3
-       RETURNING *`,
-      [status, assignee_id, id],
+      `UPDATE issues SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      [...values, id],
     );
+
+    const updatedIssue = result.rows[0];
+
+    if (!updatedIssue) {
+      return res.status(404).json({ success: false, message: "Issue not found" });
+    }
 
     if (req.body.workspaceId !== undefined) {
       await logActivity({
@@ -141,13 +316,13 @@ export const updateIssue: TypedRequestHandler<IssueParams, unknown, UpdateIssueB
         action: "ISSUE_UPDATED",
         entityType: "issue",
         entityId: Number(id),
-        metadata: { status, assignee_id },
+        metadata: { status, assigneeId },
       });
     }
 
     res.json({
       success: true,
-      data: result.rows[0],
+      data: mapIssue(updatedIssue),
     });
   } catch {
     res.status(500).json({ success: false });

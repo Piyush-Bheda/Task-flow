@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, FolderKanban, Settings, Users, PanelLeft, AlertCircle } from "lucide-react";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
