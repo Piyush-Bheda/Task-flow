@@ -19,6 +19,3 @@ COMMENT ON COLUMN project_members.project_id IS 'Reference to projects table';
 COMMENT ON COLUMN project_members.user_id IS 'Reference to users table';
 COMMENT ON COLUMN project_members.role IS 'Project role: owner, admin, or member';
 COMMENT ON COLUMN project_members.created_at IS 'When the member was added to the project';
-
--- Migration to add owner as default project member when project is created via trigger
--- Note: This is handled in the application code (project.controller.ts) for now
