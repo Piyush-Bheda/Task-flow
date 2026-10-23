@@ -90,6 +90,22 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
   try {
     const { workspaceId, projectId, title, description, priority, assigneeId } = req.body;
 
+    if (!projectId || typeof projectId !== "string") {
+      return res.status(400).json({ success: false, message: "Valid project ID is required" });
+    }
+
+    // Basic UUID validation to prevent DB crashes on invalid syntax
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(projectId)) {
+      return res.status(400).json({ success: false, message: "Invalid project ID format" });
+    }
+
+    // Verify project exists
+    const projectCheck = await pool.query("SELECT 1 FROM projects WHERE id = $1", [projectId]);
+    if (projectCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Project not found" });
+    }
+
     const result = await pool.query<IssueRecord>(
       `INSERT INTO issues (project_id, title, description, priority, assignee_id)
        VALUES ($1, $2, $3, $4, $5)
@@ -111,8 +127,8 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
     }
 
     await logActivity({
-      workspaceId: toNumber(workspaceId),
-      userId: toNumber(requireUser(req).userId),
+      workspaceId,
+      userId: requireUser(req).userId,
       action: "ISSUE_CREATED",
       entityType: "issue",
       entityId: createdIssue.id,
@@ -125,8 +141,12 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
       success: true,
       data: mapIssue(createdIssue),
     });
-  } catch {
-    res.status(500).json({ success: false });
+  } catch (error: any) {
+    console.error("[IssueController.createIssue] Error:", error);
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === "development" ? error.message : "Internal Server Error"
+    });
   }
 };
 

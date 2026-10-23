@@ -2,11 +2,11 @@ import pool from "../config/db.js";
 import type { ActivityLogRecord } from "../types/app.js";
 
 export interface LogActivityInput {
-  workspaceId: number;
-  userId: number;
+  workspaceId: number | string;
+  userId: number | string;
   action: string;
   entityType: string;
-  entityId: number;
+  entityId: number | string;
   metadata?: Record<string, unknown>;
 }
 
