@@ -12,7 +12,7 @@ interface CreateWorkspaceBody {
 }
 
 interface AddMemberParams {
-  id?: string;
+  workspaceId?: string;
 }
 
 interface AddMemberBody {
@@ -103,19 +103,19 @@ export const addMember: TypedRequestHandler<AddMemberParams, unknown, AddMemberB
 ) => {
   try {
     const { userId, role } = req.body;
-    const workspaceId = req.params.id;
+    const workspaceId = req.params.workspaceId;
 
     await pool.query(
-      "INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ($1, $2, $3)",
+      "INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT (workspace_id, user_id) DO UPDATE SET role = EXCLUDED.role",
       [workspaceId, userId, role ?? WorkspaceRole.Member],
     );
 
     res.json({ success: true });
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("[WorkspaceController.addMember] Error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to add member",
+      message: process.env.NODE_ENV === "development" ? error.message : "Failed to add member",
     });
   }
 };

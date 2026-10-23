@@ -65,6 +65,13 @@ export const login: TypedRequestHandler<never, unknown, LoginBody> = async (
       expiresIn: "1d",
     });
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     return res.json({
       success: true,
       token,
@@ -129,6 +136,13 @@ export const register: TypedRequestHandler<never, unknown, RegisterBody> = async
       expiresIn: "1d",
     });
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     return res.status(201).json({
       success: true,
       token,
@@ -145,6 +159,14 @@ export const register: TypedRequestHandler<never, unknown, RegisterBody> = async
       message: "Server error",
     });
   }
+};
+
+export const logout: TypedRequestHandler = async (req, res) => {
+  res.clearCookie("token");
+  return res.json({
+    success: true,
+    message: "Logged out successfully",
+  });
 };
 
 const refresh: TypedRequestHandler<never, unknown, { refreshToken: string }> = async (
@@ -191,6 +213,13 @@ const refresh: TypedRequestHandler<never, unknown, { refreshToken: string }> = a
 
     const token = jwt.sign({ userId: existingUser.id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
+    });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     return res.json({

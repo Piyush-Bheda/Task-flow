@@ -14,6 +14,8 @@ export function checkRole(allowedRoles: readonly WorkspaceRole[]): TypedRequestH
       const body = req.body as WorkspaceRequestSource;
       const workspaceId = params.workspaceId ?? body.workspaceId;
 
+      console.log(`[RBAC DEBUG] UserID: ${userId}, WorkspaceID: ${workspaceId}`);
+
       const result = await pool.query<RoleRow>(
         "SELECT role FROM workspace_members WHERE workspace_id = $1 AND user_id = $2",
         [workspaceId, userId],

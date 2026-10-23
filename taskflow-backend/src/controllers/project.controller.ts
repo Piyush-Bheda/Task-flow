@@ -121,9 +121,20 @@ export const getProjects: TypedRequestHandler<never, unknown, never, GetProjects
 ) => {
   try {
     const { workspaceId } = req.query;
+    const user = requireUser(req);
 
     if (!workspaceId || typeof workspaceId !== "string" || workspaceId.trim() === "") {
       return res.status(400).json({ success: false, message: "workspaceId is required" });
+    }
+
+    // Verify the user is a member of the workspace
+    const workspaceMember = await pool.query(
+      "SELECT 1 FROM workspace_members WHERE workspace_id = $1 AND user_id = $2",
+      [workspaceId, user.userId],
+    );
+
+    if (workspaceMember.rows.length === 0) {
+      return res.status(403).json({ success: false, message: "You don't have access to this workspace" });
     }
 
     const result = await pool.query<ProjectRecord>(

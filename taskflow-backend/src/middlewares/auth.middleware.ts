@@ -8,19 +8,20 @@ export const authMiddleware: TypedRequestHandler = (
   next: NextFunction,
 ) => {
   try {
+    let token: string | undefined;
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+    if (authHeader) {
+      token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: "No token provided",
       });
-    }
-
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
-
-    if (!token) {
-      return res.status(401).json({ message: "Malformed token" });
     }
 
     const secret = process.env.JWT_SECRET;
