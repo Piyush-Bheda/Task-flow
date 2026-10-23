@@ -50,9 +50,26 @@ interface IssueResponse {
 }
 
 function normalizeStatus(status: string | null | undefined): string {
-  const valid = ["todo", "in-progress", "done"];
-  if (status && valid.includes(status)) return status;
-  return "todo";
+  const mapping: Record<string, string> = {
+    "open": "Open",
+    "todo": "Open",
+    "in-progress": "In Progress",
+    "done": "Done",
+    "closed": "Closed",
+  };
+  const normalized = (status ?? "open").toLowerCase();
+  return mapping[normalized] ?? "Open";
+}
+
+function normalizePriority(priority: string | null | undefined): string {
+  const mapping: Record<string, string> = {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "urgent": "Urgent",
+  };
+  const normalized = (priority ?? "medium").toLowerCase();
+  return mapping[normalized] ?? "Medium";
 }
 
 function mapIssue(
@@ -106,11 +123,19 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
       return res.status(404).json({ success: false, message: "Project not found" });
     }
 
+    // Verify assignee exists if provided
+    if (assigneeId) {
+      const userCheck = await pool.query("SELECT 1 FROM users WHERE id = $1", [assigneeId]);
+      if (userCheck.rows.length === 0) {
+        return res.status(400).json({ success: false, message: "Assignee not found" });
+      }
+    }
+
     const result = await pool.query<IssueRecord>(
       `INSERT INTO issues (project_id, title, description, priority, assignee_id)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [projectId, title, description, priority, assigneeId || null],
+      [projectId, title, description, normalizePriority(priority), assigneeId || null],
     );
 
     const createdIssue = result.rows[0];
@@ -145,7 +170,7 @@ export const createIssue: TypedRequestHandler<never, unknown, CreateIssueBody> =
     console.error("[IssueController.createIssue] Error:", error);
     res.status(500).json({
       success: false,
-      message: process.env.NODE_ENV === "development" ? error.message : "Internal Server Error"
+      message: error.message || "Internal Server Error"
     });
   }
 };
