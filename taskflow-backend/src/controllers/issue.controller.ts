@@ -334,7 +334,7 @@ export const updateIssue: TypedRequestHandler<IssueParams, unknown, UpdateIssueB
     }
     if (priority !== undefined) {
       fields.push(`priority = $${idx++}`);
-      values.push(priority);
+      values.push(normalizePriority(priority));
     }
 
     if (fields.length === 0) {

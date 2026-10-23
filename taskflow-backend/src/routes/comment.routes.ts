@@ -8,13 +8,11 @@ const router = express.Router();
 router.post(
   "/",
   authMiddleware,
-  checkRole([WorkspaceRole.Owner, WorkspaceRole.Admin, WorkspaceRole.Member]),
   addComment,
 );
 router.get(
   "/",
   authMiddleware,
-  checkRole([WorkspaceRole.Owner, WorkspaceRole.Admin, WorkspaceRole.Member]),
   getComments,
 );
 

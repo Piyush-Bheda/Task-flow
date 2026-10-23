@@ -21,6 +21,13 @@ export const addComment: TypedRequestHandler<never, unknown, AddCommentBody> = a
     const { issueId, content, workspaceId } = req.body;
     const userId = requireUser(req).userId;
 
+    if (!issueId || !content) {
+      return res.status(400).json({
+        success: false,
+        message: "issueId and content are required",
+      });
+    }
+
     const result = await pool.query<CommentRecord>(
       `INSERT INTO comments (issue_id, user_id, content)
        VALUES ($1, $2, $3)
@@ -43,8 +50,12 @@ export const addComment: TypedRequestHandler<never, unknown, AddCommentBody> = a
       success: true,
       data: result.rows[0],
     });
-  } catch {
-    res.status(500).json({ success: false });
+  } catch (error: any) {
+    console.error("[CommentController.addComment] Error:", error);
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === "development" ? error.message : "Internal Server Error",
+    });
   }
 };
 
