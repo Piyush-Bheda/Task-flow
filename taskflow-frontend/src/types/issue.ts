@@ -1,5 +1,5 @@
 export type IssueStatus = 'todo' | 'in-progress' | 'done';
-export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
+export type IssuePriority = 'low' | 'medium' | 'high' | 'critical' | 'urgent';
 
 export interface Assignee {
   id: string;

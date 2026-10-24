@@ -1,7 +1,8 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, Settings, Users, PanelLeft, AlertCircle } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Settings, Users, PanelLeft, AlertCircle, CheckCircle2 } from "lucide-react";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -17,7 +18,7 @@ const navItems = [
 ];
 
 export default function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
-  const sidebarWidth = isCollapsed ? "w-16" : "w-[240px]";
+  const sidebarWidth = isCollapsed ? "w-16" : "w-64";
   const { user } = useAuth();
 
   const userInitial = user?.name
@@ -26,67 +27,86 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps)
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen ${sidebarWidth} bg-background border-r border-border flex flex-col transition-all duration-300 z-30`}
+      className={cn(
+        "fixed left-0 top-0 h-screen bg-zinc-50 dark:bg-zinc-950 border-r border-border flex flex-col transition-all duration-300 z-30",
+        sidebarWidth
+      )}
     >
-      {/* [A] Logo / Branding */}
-      <div className={`flex items-center h-14 px-4 border-b border-border ${isCollapsed ? "justify-center" : ""}`}>
-        <span className={`font-semibold text-lg text-foreground ${isCollapsed ? "hidden" : "block"}`}>
-          AppName
-        </span>
-        {isCollapsed && (
-          <span className="font-semibold text-lg text-foreground">A</span>
+      {/* Logo / Branding */}
+      <div className={cn(
+        "flex items-center h-16 px-4 border-b border-border bg-background transition-all",
+        isCollapsed ? "justify-center" : "gap-3"
+      )}>
+        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-sm">
+          <CheckCircle2 className="h-5 w-5 text-primary-foreground" />
+        </div>
+        {!isCollapsed && (
+          <span className="font-bold text-xl tracking-tight text-foreground">
+            TaskFlow
+          </span>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden py-4">
-        {/* [B] Workspace Switcher */}
-        <div className={`px-3 mb-4 ${isCollapsed ? "px-2" : "px-3"}`}>
+      <div className="flex-1 flex flex-col overflow-hidden py-6">
+        {/* Workspace Switcher */}
+        <div className={cn("px-3 mb-6 transition-all", isCollapsed ? "px-2" : "px-3")}>
           <WorkspaceSwitcher isCollapsed={isCollapsed} />
         </div>
 
-        {/* [C] Navigation Links */}
+        {/* Navigation Links */}
         <nav className="flex-1 space-y-1 px-3">
+          <div className={cn("text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3 transition-opacity", isCollapsed ? "opacity-0" : "opacity-100")}>
+            Main Menu
+          </div>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all group",
                   isActive
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                }`
-              }
+                    ? "bg-white dark:bg-zinc-900 text-primary shadow-sm ring-1 ring-border font-medium"
+                    : "text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-foreground"
+                )}
               title={isCollapsed ? item.label : undefined}
             >
-              <item.icon className="h-4 w-4 shrink-0" />
+              <item.icon className={cn("h-4 w-4 shrink-0 transition-colors", "group-hover:text-foreground")} />
               {!isCollapsed && <span>{item.label}</span>}
             </NavLink>
           ))}
         </nav>
 
-        {/* [D] Collapse Toggle */}
-        <div className={`px-3 mt-auto ${isCollapsed ? "px-2" : "px-3"}`}>
+        {/* Footer Area */}
+        <div className="mt-auto px-3 space-y-4">
           <button
             onClick={onToggleCollapse}
-            className="hidden md:flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+            className={cn(
+              "flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-foreground transition-all",
+              isCollapsed && "justify-center"
+            )}
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <PanelLeft className="h-4 w-4 shrink-0" />
+            <PanelLeft className={cn("h-4 w-4 shrink-0", isCollapsed && "-rotate-180")} />
             {!isCollapsed && <span>Collapse</span>}
           </button>
-        </div>
 
-        {/* [E] Sidebar Footer */}
-        <div className={`mt-2 px-3 pt-3 border-t border-border ${isCollapsed ? "px-2" : "px-3"}`}>
-          <div className="flex items-center gap-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0" title={user?.name || user?.email || undefined}>
-              <span className="text-xs font-medium text-muted-foreground">{userInitial}</span>
+          <div className={cn(
+            "flex items-center gap-3 p-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-border transition-all",
+            isCollapsed ? "justify-center px-0" : ""
+          )}>
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+              <span className="text-xs font-bold text-primary">{userInitial}</span>
             </div>
             {!isCollapsed && (
-              <span className="text-sm text-muted-foreground truncate" title={user?.email || undefined}>
-                {user?.email || "user@example.com"}
-              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-medium text-foreground truncate">
+                  {user?.name || "User"}
+                </span>
+                <span className="text-[10px] text-muted-foreground truncate">
+                  {user?.email || "user@taskflow.com"}
+                </span>
+              </div>
             )}
           </div>
         </div>

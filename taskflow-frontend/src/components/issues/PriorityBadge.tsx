@@ -27,11 +27,28 @@ const config: Record<IssuePriority, { label: string; classes: string; dot: strin
     classes: 'text-red-600 dark:text-red-400',
     dot: 'bg-red-500',
   },
+  urgent: {
+    label: 'Urgent',
+    classes: 'text-red-600 dark:text-red-400',
+    dot: 'bg-red-500',
+  },
 };
 
 export const PriorityBadge = ({ priority, className }: PriorityBadgeProps) => {
-  const { label, classes, dot } = config[priority];
-  
+  const priorityConfig = config[priority];
+
+  if (!priorityConfig) {
+    console.warn(`Unknown priority encountered: ${priority}`);
+    return (
+      <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground', className)}>
+        <span className={cn('h-1.5 w-1.5 rounded-full bg-muted-foreground/50')} />
+        {priority || 'Unknown'}
+      </span>
+    );
+  }
+
+  const { label, classes, dot } = priorityConfig;
+
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', classes, className)}>
       <span className={cn('h-1.5 w-1.5 rounded-full', dot)} />

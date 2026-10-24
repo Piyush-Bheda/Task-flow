@@ -6,6 +6,7 @@ import AppLayout from "./components/layouts/AppLayout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Dashboard from "./components/dashboard/Dashboard";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 const Issues = lazy(() => import("./pages/auth/issues/Issues"));
 const IssueDetails = lazy(() => import("./pages/auth/issues/IssueDetails"));
 
@@ -36,9 +37,11 @@ function ProjectDetailsPage() {
 
 function IssuesPage() {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Issues />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Issues />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
