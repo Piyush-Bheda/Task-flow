@@ -10,14 +10,18 @@ interface StatsCardProps {
     isPositive: boolean;
   };
   className?: string;
+  onClick?: () => void;
 }
 
-export const StatsCard = ({ icon: Icon, label, value, trend, className }: StatsCardProps) => {
+export const StatsCard = ({ icon: Icon, label, value, trend, className, onClick }: StatsCardProps) => {
   return (
-    <div className={cn(
-      "rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md",
-      className
-    )}>
+    <div
+      onClick={onClick}
+      className={cn(
+        "rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50",
+        className
+      )}
+    >
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>

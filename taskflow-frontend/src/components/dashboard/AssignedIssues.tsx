@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import type { AssignedIssue } from '@/types/dashboard';
 import { EmptyState } from './EmptyState';
 import { AlertCircle, Clock, CheckCircle2, Circle } from 'lucide-react';
@@ -8,8 +10,8 @@ interface AssignedIssuesProps {
 }
 
 const statusConfig: Record<string, { label: string; icon: typeof Circle; color: string; bg: string }> = {
-  open: { label: 'Open', icon: Circle, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-  in_progress: { label: 'In Progress', icon: Clock, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+  todo: { label: 'Todo', icon: Circle, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+  'in-progress': { label: 'In Progress', icon: Clock, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
   done: { label: 'Done', icon: CheckCircle2, color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
   backlog: { label: 'Backlog', icon: AlertCircle, color: 'text-slate-700', bg: 'bg-slate-100 border-slate-200' },
 };
@@ -22,11 +24,13 @@ const priorityConfig: Record<string, { label: string; color: string }> = {
 };
 
 export const AssignedIssues = ({ issues }: AssignedIssuesProps) => {
+  const navigate = useNavigate();
+
   if (!issues?.length) {
     return (
-      <EmptyState 
-        icon={CheckCircle2} 
-        title="No assigned issues" 
+      <EmptyState
+        icon={CheckCircle2}
+        title="No assigned issues"
         description="Issues assigned to you will show up here."
       />
     );
@@ -36,16 +40,27 @@ export const AssignedIssues = ({ issues }: AssignedIssuesProps) => {
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-border flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Assigned to You</h3>
-        <span className="text-xs text-muted-foreground">{issues.length} issues</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-primary hover:text-primary"
+          onClick={() => navigate('/issues')}
+        >
+          View all
+        </Button>
       </div>
       <div className="divide-y divide-border">
         {issues.map((issue) => {
-          const status = statusConfig[issue.status] || statusConfig.open;
+          const status = statusConfig[issue.status] || statusConfig.todo;
           const priority = priorityConfig[issue.priority] || priorityConfig.medium;
           const StatusIcon = status.icon;
 
           return (
-            <div key={issue.id} className="flex items-center gap-3 px-6 py-3.5 hover:bg-accent/30 transition-colors group">
+            <div
+              key={issue.id}
+              onClick={() => navigate(`/issues/${issue.id}`)}
+              className="flex items-center gap-3 px-6 py-3.5 hover:bg-accent/50 transition-colors group cursor-pointer"
+            >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">

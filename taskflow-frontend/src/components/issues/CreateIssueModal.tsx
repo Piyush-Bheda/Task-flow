@@ -140,6 +140,7 @@ export const CreateIssueModal = ({ open, onOpenChange, projectId = '1' }: Create
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
                     <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -171,13 +172,13 @@ export const CreateIssueModal = ({ open, onOpenChange, projectId = '1' }: Create
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...
                 </>
-              ) : (
-                'Create Issue'
-              )}
+                : (
+                  'Create Issue'
+                )}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-};
+}

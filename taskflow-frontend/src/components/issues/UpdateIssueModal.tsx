@@ -134,15 +134,16 @@ export const UpdateIssueModal = ({ issue, open, onOpenChange }: UpdateIssueModal
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
                     <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Assignee</label>
-                <Select 
-                  value={assigneeId || ''} 
-                  onValueChange={(v) => setAssigneeId(v || null)} 
+                <Select
+                  value={assigneeId || ''}
+                  onValueChange={(v) => setAssigneeId(v || null)}
                   disabled={mutation.isPending}
                 >
                   <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>

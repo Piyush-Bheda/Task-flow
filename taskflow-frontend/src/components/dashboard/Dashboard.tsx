@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { dashboardService } from '@/services/dashboard.service';
@@ -8,8 +9,10 @@ import { ActivityList } from '@/components/dashboard/ActivityList';
 import { AssignedIssues } from '@/components/dashboard/AssignedIssues';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { FolderKanban, AlertCircle, CheckCircle2, Users, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const {
     data: stats,
     isLoading: statsLoading,
@@ -47,13 +50,10 @@ export default function Dashboard() {
   const isLoading = statsLoading || activityLoading || issuesLoading;
   const hasError = statsError || activityError || issuesError;
 
-  console.log('Dashboard debug:', { statsLoading, activityLoading, issuesLoading, statsError: statsError?.message, activityError: activityError?.message, issuesError: issuesError?.message, stats, activities, issues });
-
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
-  // If there's an error, check if it's because user has no workspace
   if (hasError) {
     const errorMsg = (statsError || activityError || issuesError)?.message || '';
     if (errorMsg.includes('workspace') || errorMsg.includes('No workspace')) {
@@ -90,9 +90,9 @@ export default function Dashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Overview of your workspace</p>
+          <p className="text-sm text-muted-foreground">Workspace overview and activity</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetchStats()}>
           <RotateCcw className="h-4 w-4 mr-2" />
@@ -100,30 +100,35 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Now Actionable */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard 
-          icon={FolderKanban} 
-          label="Total Projects" 
-          value={stats?.totalProjects ?? 0} 
-          trend={{ value: 12, isPositive: true }}
+        <StatsCard
+          icon={FolderKanban}
+          label="Total Projects"
+          value={stats?.totalProjects ?? 0}
+          onClick={() => navigate('/projects')}
+          className="cursor-pointer"
         />
-        <StatsCard 
-          icon={AlertCircle} 
-          label="Total Issues" 
-          value={stats?.totalIssues ?? 0} 
-          trend={{ value: 8, isPositive: false }}
+        <StatsCard
+          icon={AlertCircle}
+          label="Total Issues"
+          value={stats?.totalIssues ?? 0}
+          onClick={() => navigate('/issues')}
+          className="cursor-pointer"
         />
-        <StatsCard 
-          icon={CheckCircle2} 
-          label="Completed" 
-          value={stats?.completedIssues ?? 0} 
-          trend={{ value: 24, isPositive: true }}
+        <StatsCard
+          icon={CheckCircle2}
+          label="Completed"
+          value={stats?.completedIssues ?? 0}
+          onClick={() => navigate('/issues?status=done')}
+          className="cursor-pointer"
         />
-        <StatsCard 
-          icon={Users} 
-          label="Active Users" 
-          value={stats?.activeUsers ?? 0} 
+        <StatsCard
+          icon={Users}
+          label="Active Users"
+          value={stats?.activeUsers ?? 0}
+          onClick={() => navigate('/members')}
+          className="cursor-pointer"
         />
       </div>
 

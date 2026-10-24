@@ -1,22 +1,25 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, AlertTriangle } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Plus, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { issueService } from '@/services/issue.service';
-import type { Issue, IssueStatus, IssuePriority } from '@/types/issue';
-import { IssueFilters } from '@/components/issues/IssueFilters';
 import { IssuesTable } from '@/components/issues/IssuesTable';
 import { IssueSkeleton } from '@/components/issues/IssueSkeleton';
 import { Pagination } from '@/components/issues/Pagination';
 import { CreateIssueModal } from '@/components/issues/CreateIssueModal';
 import { UpdateIssueModal } from '@/components/issues/UpdateIssueModal';
+import { IssueFilters } from '@/components/issues/IssueFilters';
+import type { Issue, IssueStatus, IssuePriority } from '@/types/issue';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useState as reactuseState } from 'react';
 
 export default function Issues() {
   const [searchParams] = useSearchParams();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
-  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
+  const navigate = useNavigate();
+  const [isCreateOpen, setIsCreateOpen] = reactuseState(false);
+  const [editingIssue, setEditingIssue] = reactuseState<Issue | null>(null);
+  const [isUpdateOpen, setIsUpdateOpen] = reactuseState(false);
 
   const status = (searchParams.get('status') as IssueStatus) || undefined;
   const priority = (searchParams.get('priority') as IssuePriority) || undefined;
@@ -71,7 +74,7 @@ export default function Issues() {
           <AlertTriangle className="h-6 w-6 text-red-600" />
         </div>
         <h2 className="text-lg font-semibold text-foreground">Failed to load issues</h2>
-        <p className="text-sm text-muted-foreground mt-1 mb-6">Could not fetch issues. Please try again.</p>
+        <p className="text-sm text-muted-foreground mt-1 mb-6 text-center max-w-sm">Could not fetch issues. Please try again.</p>
         <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
@@ -79,21 +82,29 @@ export default function Issues() {
 
   return (
     <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Issues</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {data?.totalCount ?? 0} issues total
-          </p>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Issues</h1>
+            <div className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
+              {data?.totalCount ?? 0} total
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">Manage and track your workspace tasks</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
+        <Button onClick={() => setIsCreateOpen(true)} className="shadow-sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Issue
         </Button>
       </div>
 
-      <IssueFilters projectId={projectId} />
+      {/* Filters Bar */}
+      <div className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-4">
+        <IssueFilters projectId={projectId} />
+      </div>
 
+      {/* Table View */}
       <IssuesTable issues={data?.data || []} onEdit={handleEdit} />
 
       {data && data.totalPages > 1 && (
@@ -103,22 +114,26 @@ export default function Issues() {
           onPageChange={(newPage) => {
             const next = new URLSearchParams(searchParams);
             next.set('page', String(newPage));
-            window.history.pushState(null, '', `?${next.toString()}`);
-            window.location.reload(); // Simple approach; use setSearchParams in real app
+            navigate({ search: next.toString() });
           }}
         />
       )}
 
       <CreateIssueModal open={isCreateOpen} onOpenChange={setIsCreateOpen} projectId={projectId} />
-      
-      <UpdateIssueModal 
-        issue={editingIssue} 
-        open={isUpdateOpen} 
+
+      <UpdateIssueModal
+        issue={editingIssue}
+        open={isUpdateOpen}
         onOpenChange={(v) => {
           setIsUpdateOpen(v);
           if (!v) setEditingIssue(null);
-        }} 
+        }}
       />
     </div>
   );
+}
+
+// Helper component for error state (imported in real app)
+function AlertTriangle(props: any) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 8-//-8.98-5.7a2 2 0 0 0-2 0l-.01 0 0 0 0 0z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>;
 }
